@@ -1,0 +1,41 @@
+---
+title: "workflow"
+output: html_document
+date: "2024-01-30"
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list=ls()) ## Completely clear the workspace.
+opts_chunk$set(fig.path='./figs/',cache.path='./cache/')
+library(mgcv)
+library(ipumsr)
+set_ipums_api_key("59cba10d8a5da536fc06b59d6b083f3aacd440d2b1f65f8b6940961e", save = TRUE)
+ipums_data_collections()
+cps.request <- define_extract_cps(
+description = "2020 CPS Data",
+samples = c("cps2020_02s","cps2020_03b","cps2020_04b"),
+variables = c("SEX", "AGE", "YEAR","RACE","EMPSTAT","LABFORCE","OCC","IND","WTFINL","HISPAN")
+)
+```
+
+```{r}
+cps.submit<-submit_extract(cps.request)
+cps.done<-wait_for_extract(cps.submit)
+download_extract(cps.submit)
+ddi<-read_ipums_ddi("/Users//OneDrive/Documents/cps_00001.xml")
+x<-read_ipums_micro(ddi)
+x<-as.data.frame(x)
+```
+
+
+```{r}
+x.sub<-x[((x$RACE==200)|(x$RACE==801))&(x$HISPAN==0),] ##black non-hispanic
+x.sub<-x.sub[(x.sub$RACE>14)&(x.sub$SEX==2),] ##15+age; female
+dim(x.sub)
+save(x,file="cpsEmployment.RData")
+```
